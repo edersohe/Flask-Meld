@@ -11,7 +11,8 @@ More fun!
 
 # Initialize Meld in your project
 
-Example of how add Flask-Meld to a Flask application
+For the sake of example, here is a minimal Flask application to get things
+running:
 
 ```py
 from flask import Flask, render_template
@@ -34,6 +35,8 @@ if __name__ == '__main__':
 ```
 
 # Add `{% meld_scripts %}` to your base html template
+
+This sets up the application and initializes Flask-Meld.
 
 ```html
 
@@ -62,9 +65,10 @@ if __name__ == '__main__':
 
 Components are stored in `meld/components` either within your application folder or in the base directory of your project.
 
-Components are simple Python classes. No magic here.
+Components are simple Python classes.
 
-Here is an example of a Counter Component:
+The `counter` component:
+
 ```py
 # app/meld/components/counter.py
 
@@ -103,6 +107,86 @@ The buttons use `meld:click` to call the `add` or `subtract` function of the
 Counter component.
 The input uses `meld:model` to bind the input to the `count` property on the
 Counter component.
+
+# Forms
+
+A big part of creating web applications is using forms. Flask-Meld integrates with
+WTForms/Flask-WTF to make validating forms happen in real-time if you choose.
+
+Define your form with Flask-WTF just as you normally would.
+
+```py
+# forms.py
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField
+from wtforms.validators import DataRequired, Email, EqualTo
+
+
+class RegistrationForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    password_confirm = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+```
+
+```html
+<!-- templates/meld/register.html -->
+<div>
+    <form meld:submit.prevent="submit">
+        {{ form.csrf_token }}
+        <div>
+            {{ form.email.label }}
+            {{ form.email }}
+            <span> {{ errors.password | first }} </span>
+        </div>
+
+        <div>
+            {{ form.password.label }}
+            {{ form.password }}
+            <span> {{ errors.password | first }} </span>
+        </div>
+        <div>
+            {{ form.password_confirm.label }}
+            {{ form.password_confirm }}
+            <span> {{ errors.password_confirm | first }} </span>
+        </div>
+        <div>
+            <button type="submit">Register</button>
+        </div>
+    </form>
+</div>
+```
+
+
+# Define the form in the component
+
+```py
+# meld/components/register.py
+from flask_meld import Component
+from forms import RegistrationForm
+
+
+class Register(Component):
+    form_class = RegistrationForm
+```
+
+# Realtime form validation
+
+To make your form validate as a user types use the `updated` function. This will provide
+the form field and allow you to validate on the fly. Simply call `validate` on the
+field.
+
+```py
+# meld/components/register.py
+from flask_meld import Component
+from forms import RegistrationForm
+
+
+class Register(Component):
+    form_class = RegistrationForm
+
+    def updated(self, field):
+        self.validate(field)
+```
 
 Pretty simple right? You can use this to create very dynamic user interfaces
 using pure Python and HTML. We would love to see what you have built using Meld
