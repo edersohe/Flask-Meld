@@ -72,8 +72,8 @@ class Component:
             # flask request object to populate the form
             self._form = getattr(self, "form_class")(formdata=None)
             for field in self._form:
-                d = {"meld:model": field.name}
-                setattr(self._form[field.name], "render_kw", d)
+                meld_attribute = {"meld:model": field.name}
+                setattr(self._form[field.name], "render_kw", meld_attribute)
                 if field.name in kwargs:
                     self._set_field_data(field.name, kwargs[field.name])
                     if field.name == "csrf_token":
