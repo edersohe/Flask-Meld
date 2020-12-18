@@ -113,6 +113,8 @@ Counter component.
 A big part of creating web applications is using forms. Flask-Meld integrates with
 WTForms/Flask-WTF to make validating forms happen in real-time if you choose.
 
+## Use WTForms for validation
+
 Define your form with Flask-WTF just as you normally would.
 
 ```py
@@ -128,7 +130,7 @@ class RegistrationForm(FlaskForm):
     password_confirm = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
 ```
 
-# Create your template
+## Create your template
 
 Use WTForm helpers to create your form in your HTML template. 
 
@@ -167,7 +169,7 @@ make a field use
 Just make sure that `meld:model="name_of_field"` exists on each field. 
 
 
-# Define the form in the component
+## Define the form in the component
 
 ```py
 # meld/components/register.py
@@ -179,7 +181,7 @@ class Register(Component):
     form_class = RegistrationForm
 ```
 
-# Realtime form validation
+## Realtime form validation
 
 To make your form validate as a user types use the `updated` function. This will provide
 the form field and allow you to validate on the fly. Simply call `validate` on the
