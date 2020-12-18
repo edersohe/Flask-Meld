@@ -78,9 +78,16 @@ class Component:
 
     @property
     def _meld_attrs(self):
+        """
+        A list of meld variables and functions that are hidden from the view
+        """
         return ["id", "render", "validate", "updated"]
 
     def _bind_form(self, kwargs):
+        """
+        Create a form from the form_class, add meld:model to each field and
+        bind kwargs to field data
+        """
         # tricky: https://flask-wtf.readthedocs.io/en/stable/api.html
         # need to pass formdata=None or flask-wtf will try to use the
         # flask request object to populate the form
@@ -91,11 +98,17 @@ class Component:
             self._bind_data_to_form(field, kwargs)
 
     def _set_token(self, field):
+        """
+        Gather the CSRF token from the form and apply it to the component.
+        """
         soup = BeautifulSoup(field.__call__(), features="html.parser")
         token = soup.find(attrs={"name": CSRF_TOKEN_ATTR}).get("value")
         self.csrf_token = token
 
     def _bind_data_to_form(self, field, kwargs):
+        """
+        Bind any attributes from kwargs that are form fields to the form.
+        """
         if field.name in kwargs:
             self._set_field_data(field.name, kwargs[field.name])
             if field.name == CSRF_TOKEN_ATTR:
@@ -104,22 +117,26 @@ class Component:
             setattr(self, field.name, None)
 
     def _set_field_data(self, field_name, value):
+        """
+        Set the data attribute on a form field.
+        """
         setattr(self._form[field_name], "data", value)
 
     def validate(self, field=None):
+        """
+        Validate a form or a field.
+        """
         if self._form:
             if field:
                 validate = field.validate(self._form)
             else:
                 validate = self._form.validate()
+
             if not validate:
                 for field in self._form:
                     if field.errors:
                         self.errors[field.name] = field.errors
-                return False
-        return True
-
-        return validate
+            return validate
 
     def _attributes(self):
         """
@@ -215,13 +232,18 @@ class Component:
         return rendered_template
 
     def _set_values(self, soup, context_variables):
+        """
+        Set the value on model fields
+        """
         for element in soup:
             try:
                 if "meld:model" in element.attrs:
                     element.attrs["value"] = context_variables[
                         element.attrs["meld:model"]
                     ]
-            except Exception as e:
+            except Exception:
+                # There are cases where an element will not have attrs and does not need
+                # to be set. Simply ignore those
                 pass
 
     @staticmethod
