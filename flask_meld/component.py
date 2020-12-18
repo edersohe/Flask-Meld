@@ -7,7 +7,6 @@ from flask import render_template, current_app, url_for
 from bs4 import BeautifulSoup
 from bs4.formatter import HTMLFormatter
 
-
 def convert_to_snake_case(s):
     s.replace("-", "_")
     return s
@@ -59,39 +58,43 @@ def load_module_from_path(full_path, module_name):
 
 
 class Component:
-    def __init__(self, id=None, request=None, **kwargs):
+    def __init__(self, id=None, form=None, **kwargs):
         if not id:
             id = uuid.uuid4()
+        self.errors = {}
+        self._form = None
         self.__dict__.update(**kwargs)
         self.id = id
-        self._form = None
-        self.errors = {}
 
         if hasattr(self, "form_class"):
             # tricky: https://flask-wtf.readthedocs.io/en/stable/api.html
             # need to pass formdata=None or flask-wtf will try to use the
             # flask request object to populate the form
             self._form = getattr(self, "form_class")(formdata=None)
-            self._set_form_data()
+            for field in self._form:
+                d = {"meld:model": field.name}
+                setattr(self._form[field.name], "render_kw", d)
+                if field.name in kwargs:
+                    self._set_field_data(field.name, kwargs[field.name])
+                else:
+                    setattr(self, field.name, None)
 
     def __repr__(self):
         return f"<meld.Component {self.__class__.__name__}-vars{self._attributes()})>"
 
     @property
     def _meld_attrs(self):
-        return ["id", "render", "validate"]
+        return ["id", "render", "validate", "updated"]
 
-    def _set_form_data(self, data=None):
-        if not data:
-            data = self._attributes()
-        form = self._form
-        for field in form.data:
-            if field in data:
-                setattr(form[field], "data", data[field])
+    def _set_field_data(self, field_name, value):
+        setattr(self._form[field_name], "data", value)
 
-    def validate(self):
+    def validate(self, field=None):
         if self._form:
-            validate = self._form.validate()
+            if field:
+                validate = field.validate(self._form)
+            else:
+                validate = self._form.validate()
             if not validate:
                 for field in self._form:
                     if field.errors:
@@ -146,6 +149,12 @@ class Component:
             "methods": self._functions(),
         }
 
+    def updated(self, name):
+        """
+        Hook that gets called when a component's data is about to get updated.
+        """
+        pass
+
     def render(self, component_name):
         return self._view(component_name, self._attributes())
 
@@ -155,6 +164,7 @@ class Component:
         context_variables.update(context["attributes"])
         context_variables.update(context["methods"])
         context_variables.update(data)
+        context_variables.update({"form": self._form})
 
         frontend_context_variables = {}
         frontend_context_variables.update(context["attributes"])

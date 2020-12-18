@@ -1,11 +1,11 @@
 from .component import get_component_class
+from flask import request
 
 
 def process_message(message):
     meld_id = message["id"]
     action = message["action"]
     component_name = message["componentName"]
-    meld_id = meld_id
 
     data = message["data"]
     Component = get_component_class(component_name)
@@ -15,6 +15,15 @@ def process_message(message):
     if "syncInput" in action["type"]:
         if hasattr(component, payload["name"]):
             setattr(component, payload["name"], payload["value"])
+            if component._form:
+                field_name = payload.get("name")
+                if field_name in component._form._fields:
+                    field = getattr(component._form, field_name)
+                    component._set_field_data(field_name, payload["value"])
+                    component.updated(field)
+                    component.errors[field_name] = field.errors or ""
+            else:
+                component.updated(payload["name"])
 
     elif "callMethod" in action["type"]:
         call_method_name = payload.get("name", "")
