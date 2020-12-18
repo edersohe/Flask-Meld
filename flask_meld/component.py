@@ -7,6 +7,7 @@ from flask import render_template, current_app, url_for
 from bs4 import BeautifulSoup
 from bs4.formatter import HTMLFormatter
 
+
 def convert_to_snake_case(s):
     s.replace("-", "_")
     return s
@@ -58,7 +59,7 @@ def load_module_from_path(full_path, module_name):
 
 
 class Component:
-    def __init__(self, id=None, form=None, **kwargs):
+    def __init__(self, id=None, **kwargs):
         if not id:
             id = uuid.uuid4()
         self.errors = {}
@@ -67,21 +68,7 @@ class Component:
         self.id = id
 
         if hasattr(self, "form_class"):
-            # tricky: https://flask-wtf.readthedocs.io/en/stable/api.html
-            # need to pass formdata=None or flask-wtf will try to use the
-            # flask request object to populate the form
-            self._form = getattr(self, "form_class")(formdata=None)
-            for field in self._form:
-                meld_attribute = {"meld:model": field.name}
-                setattr(self._form[field.name], "render_kw", meld_attribute)
-                if field.name in kwargs:
-                    self._set_field_data(field.name, kwargs[field.name])
-                    if field.name == "csrf_token":
-                        soup = BeautifulSoup(field.__call__(), features="html.parser")
-                        token = soup.find(attrs={"name": "csrf_token"}).get("value")
-                        self.csrf_token = token
-                else:
-                    setattr(self, field.name, None)
+            self._bind_form(kwargs)
 
     def __repr__(self):
         return f"<meld.Component {self.__class__.__name__}-vars{self._attributes()})>"
@@ -89,6 +76,29 @@ class Component:
     @property
     def _meld_attrs(self):
         return ["id", "render", "validate", "updated"]
+
+    def _bind_form(self, kwargs):
+        # tricky: https://flask-wtf.readthedocs.io/en/stable/api.html
+        # need to pass formdata=None or flask-wtf will try to use the
+        # flask request object to populate the form
+        self._form = getattr(self, "form_class")(formdata=None)
+        for field in self._form:
+            meld_attribute = {"meld:model": field.name}
+            setattr(self._form[field.name], "render_kw", meld_attribute)
+            self._bind_data_to_form(field, kwargs)
+
+    def _set_token(self, field):
+        soup = BeautifulSoup(field.__call__(), features="html.parser")
+        token = soup.find(attrs={"name": "csrf_token"}).get("value")
+        self.csrf_token = token
+
+    def _bind_data_to_form(self, field, kwargs):
+        if field.name in kwargs:
+            self._set_field_data(field.name, kwargs[field.name])
+            if field.name == "csrf_token":
+                self._set_token(field)
+        else:
+            setattr(self, field.name, None)
 
     def _set_field_data(self, field_name, value):
         setattr(self._form[field_name], "data", value)
@@ -105,7 +115,6 @@ class Component:
                         self.errors[field.name] = field.errors
                 return False
         return True
-
 
         return validate
 
