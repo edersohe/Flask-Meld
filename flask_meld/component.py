@@ -76,6 +76,10 @@ class Component:
                 setattr(self._form[field.name], "render_kw", d)
                 if field.name in kwargs:
                     self._set_field_data(field.name, kwargs[field.name])
+                    if field.name == "csrf_token":
+                        soup = BeautifulSoup(field.__call__(), features="html.parser")
+                        token = soup.find(attrs={"name": "csrf_token"}).get("value")
+                        self.csrf_token = token
                 else:
                     setattr(self, field.name, None)
 
@@ -99,6 +103,9 @@ class Component:
                 for field in self._form:
                     if field.errors:
                         self.errors[field.name] = field.errors
+                return False
+        return True
+
 
         return validate
 

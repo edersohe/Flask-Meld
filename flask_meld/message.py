@@ -28,7 +28,6 @@ def process_message(message):
     elif "callMethod" in action["type"]:
         call_method_name = payload.get("name", "")
         method_name = call_method_name
-
         params = None
 
         if "(" in call_method_name and call_method_name.endswith(")"):
