@@ -58,6 +58,9 @@ def load_module_from_path(full_path, module_name):
     return module
 
 
+CSRF_TOKEN_ATTR = "csrf_token"
+
+
 class Component:
     def __init__(self, id=None, **kwargs):
         if not id:
@@ -89,13 +92,13 @@ class Component:
 
     def _set_token(self, field):
         soup = BeautifulSoup(field.__call__(), features="html.parser")
-        token = soup.find(attrs={"name": "csrf_token"}).get("value")
+        token = soup.find(attrs={"name": CSRF_TOKEN_ATTR}).get("value")
         self.csrf_token = token
 
     def _bind_data_to_form(self, field, kwargs):
         if field.name in kwargs:
             self._set_field_data(field.name, kwargs[field.name])
-            if field.name == "csrf_token":
+            if field.name == CSRF_TOKEN_ATTR:
                 self._set_token(field)
         else:
             setattr(self, field.name, None)
