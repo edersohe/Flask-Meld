@@ -126,17 +126,19 @@ class Component:
         """
         Validate a form or a field.
         """
-        if self._form:
-            if field:
-                validate = field.validate(self._form)
-            else:
-                validate = self._form.validate()
+        if not self._form:
+            return True
 
-            if not validate:
-                for field in self._form:
-                    if field.errors:
-                        self.errors[field.name] = field.errors
-            return validate
+        if field:
+            validate = field.validate(self._form)
+        else:
+            validate = self._form.validate()
+
+        if not validate:
+            for field in self._form:
+                if field.errors:
+                    self.errors[field.name] = field.errors
+        return validate
 
     def _attributes(self):
         """
