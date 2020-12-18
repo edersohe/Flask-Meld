@@ -128,6 +128,10 @@ class RegistrationForm(FlaskForm):
     password_confirm = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
 ```
 
+# Create your template
+
+Use WTForm helpers to create your form in your HTML template. 
+
 ```html
 <!-- templates/meld/register.html -->
 <div>
@@ -155,6 +159,12 @@ class RegistrationForm(FlaskForm):
     </form>
 </div>
 ```
+
+Using the WTForm helpers saves you a little bit of typing.  
+Alternatively, you can define your HTML form without using the helpers. For example, to
+make a field use
+`<input id="email" meld:model="email" name="email" required="" type="text" value="">`
+Just make sure that `meld:model="name_of_field"` exists on each field. 
 
 
 # Define the form in the component
