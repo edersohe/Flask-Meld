@@ -108,14 +108,14 @@ Counter component.
 The input uses `meld:model` to bind the input to the `count` property on the
 Counter component.
 
-# Forms
+# Form Validation
 
 A big part of creating web applications is using forms. Flask-Meld integrates with
-WTForms/Flask-WTF to make validating forms happen in real-time if you choose.
+Flask-WTF to give you real-time form validation without writing any Javascript.
 
 ## Use WTForms for validation
 
-Define your form with Flask-WTF just as you normally would.
+Define your form with Flask-WTF just as you always do. 
 
 ```py
 # forms.py
@@ -137,8 +137,7 @@ Use WTForm helpers to create your form in your HTML template.
 ```html
 <!-- templates/meld/register.html -->
 <div>
-    <form meld:submit.prevent="submit">
-        {{ form.csrf_token }}
+    <form method="POST">
         <div>
             {{ form.email.label }}
             {{ form.email }}
@@ -156,18 +155,17 @@ Use WTForm helpers to create your form in your HTML template.
             <span> {{ errors.password_confirm | first }} </span>
         </div>
         <div>
-            <button type="submit">Register</button>
+            {{ form.submit }}
         </div>
     </form>
 </div>
 ```
 
-Using the WTForm helpers saves you a little bit of typing.  
-Alternatively, you can define your HTML form without using the helpers. For example, to
-make a field use
+Using the WTForm helpers saves you some typing. 
+Alternatively, you can define your HTML form without using the helpers. 
+For example, to make a field use
 `<input id="email" meld:model="email" name="email" required="" type="text" value="">`
-Just make sure that `meld:model="name_of_field"` exists on each field. 
-
+Make sure that `meld:model="name_of_field"` exists on each field.
 
 ## Define the form in the component
 
@@ -199,6 +197,21 @@ class Register(Component):
     def updated(self, field):
         self.validate(field)
 ```
+
+## Your routes can stay the same when using real-time validation
+
+You have options here, you can create a custom method on your component to handle
+submissions or you can use your regular old Flask routes. 
+
+```py
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        # do anything you need with your form data...
+        return redirect(url_for("index"))
+    return render_template("register_page.html")
+'''
 
 Pretty simple right? You can use this to create very dynamic user interfaces
 using pure Python and HTML. We would love to see what you have built using Meld
