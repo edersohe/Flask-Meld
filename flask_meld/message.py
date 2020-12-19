@@ -51,6 +51,8 @@ def process_message(message):
                 func(*params)
             else:
                 func()
+            if component._form:
+                component._bind_form(component._attributes())
     rendered_component = component.render(component_name)
 
     res = {"id": meld_id, "dom": rendered_component, "data": component._attributes()}
